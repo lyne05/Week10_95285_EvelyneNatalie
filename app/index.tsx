@@ -2,6 +2,7 @@ import * as Location from "expo-location";
 import React, { useState } from "react";
 import { Button, Dimensions, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Region, UrlTile } from "react-native-maps";
+import { supabase } from "../utils/supabase";
 
 type Coordinates = {
   latitude: number;
@@ -22,10 +23,28 @@ export default function App() {
     }
 
     const loc = await Location.getCurrentPositionAsync({});
-    setLocation({
+
+    const currentLocation = {
       latitude: loc.coords.latitude,
       longitude: loc.coords.longitude,
-    });
+    };
+
+    setLocation(currentLocation);
+
+    const { error } = await supabase.from("location").insert([
+      {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      },
+    ]);
+
+    if (error) {
+      console.log(error);
+      alert(error.message);
+      return;
+    }
+
+    alert("Location saved successfully!");
   };
 
   const region: Region | undefined = location
@@ -55,7 +74,6 @@ export default function App() {
           >
             <UrlTile
               {...({
-                //sudah pakai link di dc tapi masih access blocked
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 additionalHeaders: { "User-Agent": "MyApp/1.0" },
                 maximumZ: 19,
@@ -89,11 +107,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
   map: {
     height: height * 0.5,
